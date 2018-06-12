@@ -3,36 +3,50 @@ package com.aandres.spring.examples.controller;
 import com.aandres.spring.examples.assemblers.BookResourceAssembler;
 import com.aandres.spring.examples.beans.Book;
 import com.aandres.spring.examples.dao.BookDAO;
+import com.aandres.spring.examples.dto.BookResource;
+import com.aandres.spring.examples.service.BookServiceImpl;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import static org.springframework.hateoas.MediaTypes.HAL_JSON_VALUE;
+import java.util.List;
 
-import java.awt.*;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
 @RestController
 @RequestMapping("/books")
 public class BookController {
 
-    private final BookDAO bookDAO;
+    private final BookServiceImpl bookService;
     private final BookResourceAssembler assembler;
 
-    BookController(BookDAO bookDao, BookResourceAssembler assembler){
-        this.bookDAO = bookDao;
+    BookController(BookServiceImpl bookService, BookResourceAssembler assembler){
+        this.bookService = bookService;
         this.assembler = assembler;
     }
 
     @RequestMapping(value = "", method = RequestMethod.GET, produces = MediaTypes.HAL_JSON_VALUE)
-    public ResponseEntity<Resources<Resource<Book>>> findAll() {
-        return ResponseEntity.ok(assembler.toResources(bookDAO.findAll()));
+    public ResponseEntity<Page<BookResource>> findAll(@PageableDefault( sort = "isbn", direction = Sort.Direction.ASC)
+                                                                    final Pageable pageable){
+        //return ResponseEntity.ok(bookService.getAllBooks(pageable));
+        return ResponseEntity.ok(new PageImpl<>(assembler.toResources(bookService.getAllBooks(pageable))));
     }
+
 
     @RequestMapping(value = "/{isbn}", method = RequestMethod.GET, produces = MediaTypes.HAL_JSON_VALUE)
-    public ResponseEntity<Resource<Book>> getByIban(@PathVariable(value="isbn") Long isbn) {
+    public ResponseEntity<BookResource> getByIban(@PathVariable(value="isbn") Long isbn) {
 
-        return ResponseEntity.ok(assembler.toResource(bookDAO.findByIsbn(isbn)));
+        return ResponseEntity.ok(assembler.toResource(bookService.findByIsbn(isbn)));
     }
+
+
 }
